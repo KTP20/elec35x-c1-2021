@@ -17,16 +17,13 @@ using namespace std;
 
 
     
-        // LEDMatrix(matrix_spi, matrix_spi_cs, matrix_spi_oe)
-        // {
-        //     //constructor
-        // }
-
+        // set chip select
         void LEDMatrix::setChipSelect(int chip)
         {
             matrix_spi_cs = chip;
         }
-
+        
+        //clears one line of the matrix
         void LEDMatrix::clearMatrix()
         {
             // sets all the LEDs to off
@@ -37,11 +34,11 @@ using namespace std;
             matrix_spi.write(0x00);//ROW RHS
             setChipSelect(1);
         }
-
+        //sets one column to a certain height
         void LEDMatrix::setColumn(unsigned long long i, unsigned long long j, long k)
         {
             // sets the column top hal and bottom hafl anf the row and turs that many lights on at once.
-            printf("LEDS on = %llu, %llu, %ld\n",i,j,k);
+            //printf("LEDS on = %llu, %llu, %ld\n",i,j,k);
 
             setChipSelect(0);
             matrix_spi.write(i);//COL RHS
@@ -52,7 +49,7 @@ using namespace std;
             clearMatrix();
             
         }
-
+        // converts the value from an in into 2 hex values , quantized to 16 values based on the high and low threshhold
         void LEDMatrix::convertValue(unsigned int sample, unsigned int low_threshold, unsigned int high_threshold, long column)
         {
             float value; 
@@ -60,7 +57,7 @@ using namespace std;
             int fullHexValue = 0xFFFF;
             float thresholdDifference = high_threshold-low_threshold;
             
-
+            // if the threshold difference is less or equal to 0, then i cant do the division so i need to error out
             if(thresholdDifference <= 0)
             {
                 printf("Numerical Error, cannot divide by 0 or negative\n");
@@ -70,11 +67,12 @@ using namespace std;
                 value = ((sample-low_threshold)/thresholdDifference)*16;
                
             }
-
+            //changes the value from an int between 0 and 16 to a hex value
             value = round(value);
             int shiftAmount =  16 - value;
+            // shifts 0xFFFF down to make the number of 1s in the value
             fullHexValue = fullHexValue >> shiftAmount;
-            printf("height = %u\n",fullHexValue);
+            //printf("height = %u\n",fullHexValue);
             // chaninging the full hex value, to the lhs and rhs of the hex vakue for the ematrix
             int RHSHexValue = 0x00;
             int LHSHexValue = 0x00;
@@ -86,34 +84,13 @@ using namespace std;
                 RHSHexValue = fullHexValue >> 8;
                 LHSHexValue = fullHexValue - (RHSHexValue << 8);
             }     
-
+            //uses the values made and sets the column
             setColumn(RHSHexValue, LHSHexValue, column);
         } 
-
-        void LEDMatrix::sensorType (char sensor)
+        //gets the sample and put it into the convert values and the set column
+        void LEDMatrix::sensorType (char sensor,int Low, int High)
         {
-            int lowThreshold;
-            int highThreshold;
-            
-            switch(sensor)
-            {
-                case 'T':
-                    lowThreshold = 0;
-                    highThreshold = 16;
-                    break;
-                case 'L':
-                    lowThreshold = 0;
-                    highThreshold = 16;
-                    break;
-                case 'P':
-                    lowThreshold = 0;
-                    highThreshold = 16;
-                    break;  
-                default:
-                    lowThreshold = 0;
-                    highThreshold = 16;
-                    break;
-            }
+
             int sample[8];
             for(int i=0;i<7;i++)
             {
@@ -122,15 +99,15 @@ using namespace std;
             
             for(int i=7;i>=0;i--)
             {
-                LEDMatrix::convertValue(sample[i], lowThreshold, highThreshold, i);
-                //wait_us(SCAN_RATE_MS);
+                LEDMatrix::convertValue(sample[i], Low, High, i);
             }
         }
-
+        //get sample //need the get from the FIFO
         int LEDMatrix::GetSample()
         {
+            // when there are actual values to get, add those in.
             int sample = rand() %16;
-            printf("Sample = %u\n",sample);
+            //printf("Sample = %u\n",sample);
             return sample;
         }
 /*

@@ -1,6 +1,10 @@
+// /*
+//  * Copyright (c) 2020 Arm Limited
+//  * SPDX-License-Identifier: Apache-2.0
+//  */
+
 // #include "mbed.h"
 // #include "rtos/ThisThread.h"
-// #include "NTPClient.h"
 
 // #include "certs.h"
 // #include "iothub.h"
@@ -17,21 +21,15 @@
 // #include <cstring>
 // #include <string.h>
 
-// /**
-//  * This example sends and receives messages to and from Azure IoT Hub.
-//  * The API usages are based on Azure SDK's official iothub_convenience_sample.
-//  */
+// #include "uop_msb.h"
+// #include "AzureIoT.h"
 
-// // Global symbol referenced by the Azure SDK's port for Mbed OS, via "extern"
+
+
 // NetworkInterface *_defaultSystemNetwork;
-// static bool message_received = false;
-
-// DigitalOut led1(LED1); 
 // DigitalOut led2(LED2);
-// DigitalIn blueButton(USER_BUTTON);
 
-
-// static void on_connection_status(IOTHUB_CLIENT_CONNECTION_STATUS result, IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* user_context)
+//  void AzureIoT::on_connection_status(IOTHUB_CLIENT_CONNECTION_STATUS result, IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* user_context)
 // {
 //     if (result == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED) {
 //         LogInfo("Connected to IoT Hub");
@@ -43,7 +41,8 @@
 // // **************************************
 // // * MESSAGE HANDLER (no response sent) *
 // // **************************************
-// static IOTHUBMESSAGE_DISPOSITION_RESULT on_message_received(IOTHUB_MESSAGE_HANDLE message, void* user_context)
+
+// IOTHUBMESSAGE_DISPOSITION_RESULT AzureIoT::on_message_received(IOTHUB_MESSAGE_HANDLE message, void* user_context)
 // {
 //     LogInfo("Message received from IoT Hub");
 
@@ -66,7 +65,7 @@
 //     return IOTHUBMESSAGE_ACCEPTED;
 // }
 
-// static void on_message_sent(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void* userContextCallback)
+// void AzureIoT::on_message_sent(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void* userContextCallback)
 // {
 //     if (result == IOTHUB_CLIENT_CONFIRMATION_OK) {
 //         LogInfo("Message sent successfully");
@@ -79,7 +78,11 @@
 // // ****************************************************
 // // * COMMAND HANDLER (sends a response back to Azure) *
 // // ****************************************************
-// static int on_method_callback(const char* method_name, const unsigned char* payload, size_t size, unsigned char** response, size_t* response_size, void* userContextCallback)
+// DigitalOut led1(LED1);
+// DigitalOut led3(LED3);
+// DigitalIn blueButton(USER_BUTTON);
+
+// int AzureIoT::on_method_callback(const char* method_name, const unsigned char* payload, size_t size, unsigned char** response, size_t* response_size, void* userContextCallback)
 // {
 //     const char* device_id = (const char*)userContextCallback;
 
@@ -87,12 +90,24 @@
 //     printf("Device Method name:    %s\r\n", method_name);
 //     printf("Device Method payload: %.*s\r\n", (int)size, (const char*)payload);
 
-//     if ( strncmp("true", (const char*)payload, size) == 0 ) {
-//         printf("LED ON\n");
-//         led1 = 1;
-//     } else {
-//         printf("LED OFF\n");
-//         led1 = 0;
+    
+//     if (strncmp("ToggleLED",(const char*)method_name, 11) == 0){
+//         if ( strncmp("true", (const char*)payload, size) == 0 ) {
+//             printf("LED1 ON\n");
+//             led1 = 1;
+//         } else {
+//             printf("LED1 OFF\n");
+//             led1 = 0;
+//         }
+//     }
+//     else {
+//        if ( strncmp("true", (const char*)payload, size) == 0 ) {
+//             printf("LED3 ON\n");
+//             led3 = 1;
+//         } else {
+//             printf("LED3 OFF\n");
+//             led3 = 0;
+//         }
 //     }
 
 //     int status = 200;
@@ -114,15 +129,16 @@
 //     return status;
 // }
 
-// void AzureSend() {
+
+
+
+// void AzureIoT::InitSendIoT() {
 //     bool trace_on = MBED_CONF_APP_IOTHUB_CLIENT_TRACE;
 //     tickcounter_ms_t interval = 100;
 //     IOTHUB_CLIENT_RESULT res;
 
 //     LogInfo("Initializing IoT Hub client");
 //     IoTHub_Init();
-
-
 
 //     IOTHUB_DEVICE_CLIENT_HANDLE client_handle = IoTHubDeviceClient_CreateFromConnectionString(
 //         azure_cloud::credentials::iothub_connection_string,
@@ -155,21 +171,21 @@
 //     }
 
 //     // set incoming message callback
-//     res = IoTHubDeviceClient_SetMessageCallback(client_handle, on_message_received, nullptr);
+//     res = IoTHubDeviceClient_SetMessageCallback(client_handle, AzureIoT::on_message_received, nullptr);
 //     if (res != IOTHUB_CLIENT_OK) {
 //         LogError("Failed to set message callback, error: %d", res);
 //         goto cleanup;
 //     }
 
 //     // Set incoming command callback
-//     res = IoTHubDeviceClient_SetDeviceMethodCallback(client_handle, on_method_callback, nullptr);
+//     res = IoTHubDeviceClient_SetDeviceMethodCallback(client_handle, AzureIoT::on_method_callback, nullptr);
 //     if (res != IOTHUB_CLIENT_OK) {
 //         LogError("Failed to set method callback, error: %d", res);
 //         goto cleanup;
 //     }
 
 //     // Set connection/disconnection callback
-//     res = IoTHubDeviceClient_SetConnectionStatusCallback(client_handle, on_connection_status, nullptr);
+//     res = IoTHubDeviceClient_SetConnectionStatusCallback(client_handle, AzureIoT::on_connection_status, nullptr);
 //     if (res != IOTHUB_CLIENT_OK) {
 //         LogError("Failed to set connection status callback, error: %d", res);
 //         goto cleanup;
@@ -188,13 +204,15 @@
 //         /*
 //             {
 //                 "LightLevel" : 0.12,
-//                 "Temperature" : 36.0
+//                 "Temperature" : 36.0,
+//                 "Pressure"  : 3.5
 //             }
 
 //         */
 //         double light = (float) i;
 //         double temp  = (float)36.0f-0.1*(float)i;
-//         sprintf(message, "{ \"LightLevel\" : %5.2f, \"Temperature\" : %5.2f }", light, temp);
+//         double pressure = (float) i+2;
+//         sprintf(message, "{ \"LightLevel\" : %5.2f, \"Temperature\" : %5.2f, \"Pressure\" : %5.2f}", light, temp, pressure);
 //         LogInfo("Sending: \"%s\"", message);
 
 //         message_handle = IoTHubMessage_CreateFromString(message);
@@ -227,7 +245,7 @@
 //     IoTHub_Deinit();
 // }
 
-// int InitAzure() {
+// int AzureIoT::InitIoTx() {
 //     LogInfo("Connecting to the network");
 
 //     _defaultSystemNetwork = NetworkInterface::get_default_instance();
@@ -256,7 +274,7 @@
 //     LogInfo("Testing Logging\n");
 //     set_time(timestamp);
     
-//     AzureSend();
+//     InitSendIoT();
 
 //     return 0;
 // }

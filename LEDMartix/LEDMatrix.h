@@ -20,6 +20,7 @@ class LEDMatrix
         int GetSample();
         
     public:
+        //constructor does a sweep of the LEDs for no reason, i wanted to
         LEDMatrix(): matrix_spi(PC_12,PC_11,PC_10), matrix_spi_cs(PB_6), matrix_spi_oe(PB_12)
         {
        
@@ -53,8 +54,8 @@ for (int j=0;j<=7;j++)  //NB ROW has 3 to 8 decoder so 0 to 7 to Row Select
             matrix_spi.write(0x00);//ROW RHS
             matrix_spi_cs=1;  
     }
-       
-        void sensorType (char sensor);
+
+    void sensorType (char sensor,int Low, int High);
         
 };
 #endif
